@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EVO · Absen Karyawan</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        /* ===== SAME STYLES ===== */
+        * { margin:0; padding:0; box-sizing:border-box; }
+        :root {
+            --bg-primary: #0b0b1a;
+            --bg-secondary: #111128;
+            --bg-card: rgba(255,255,255,0.04);
+            --bg-card-hover: rgba(255,255,255,0.07);
+            --border-glass: rgba(255,255,255,0.08);
+            --text-primary: #f0f0f8;
+            --text-secondary: #a8a8c8;
+            --text-muted: #6a6a8a;
+            --gold: #e4a853;
+            --gold-light: #f5d08a;
+            --gold-glow: rgba(228,168,83,0.25);
+            --shadow-card: 0 20px 50px rgba(0,0,0,0.6);
+            --radius: 20px;
+            --radius-sm: 12px;
+            --transition: 0.35s cubic-bezier(0.25,0.46,0.45,0.94);
+        }
+        body { font-family:'Inter',sans-serif; background:var(--bg-primary); color:var(--text-primary); min-height:100vh; padding:24px 16px 60px; background-image:radial-gradient(ellipse at 20% 10%, rgba(228,168,83,0.06) 0%, transparent 60%), radial-gradient(ellipse at 80% 90%, rgba(228,168,83,0.04) 0%, transparent 50%); }
+        .app-wrapper { max-width:1300px; margin:0 auto; }
+        .app-header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; padding:18px 28px; background:var(--bg-card); backdrop-filter:blur(24px); border:1px solid var(--border-glass); border-radius:var(--radius); margin-bottom:32px; box-shadow:var(--shadow-card); }
+        .brand { display:flex; align-items:center; gap:14px; }
+        .brand .logo-svg { width:44px; height:44px; filter:drop-shadow(0 0 12px var(--gold-glow)); }
+        .brand h1 { font-size:24px; font-weight:700; background:linear-gradient(135deg,#fff 30%,var(--gold-light) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+        .brand h1 span { font-weight:400; opacity:0.5; -webkit-text-fill-color:var(--text-secondary); }
+        .header-actions { display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+        .upload-btn-wrapper { position:relative; overflow:hidden; display:inline-block; }
+        .upload-btn-wrapper input[type=file] { position:absolute; left:0; top:0; opacity:0; width:100%; height:100%; cursor:pointer; }
+        .btn { display:inline-flex; align-items:center; gap:10px; padding:10px 22px; border-radius:60px; font-weight:600; font-size:14px; border:none; cursor:pointer; transition:var(--transition); font-family:inherit; background:rgba(255,255,255,0.06); color:var(--text-primary); border:1px solid var(--border-glass); }
+        .btn i { font-size:16px; }
+        .btn:hover { transform:translateY(-2px); box-shadow:0 8px 30px rgba(0,0,0,0.4); }
+        .btn-gold { background:linear-gradient(135deg,var(--gold),#c9923a); color:#0b0b1a; border-color:var(--gold); box-shadow:0 4px 20px var(--gold-glow); }
+        .btn-gold:hover { box-shadow:0 8px 35px var(--gold-glow); background:linear-gradient(135deg,#f5d08a,var(--gold)); }
+        .btn-outline { background:transparent; border-color:rgba(255,255,255,0.15); }
+        .btn-outline:hover { background:rgba(255,255,255,0.05); border-color:rgba(255,255,255,0.25); }
+        .btn-sm { padding:6px 14px; font-size:12px; }
+        .btn:disabled { opacity:0.4; cursor:not-allowed; transform:none !important; box-shadow:none !important; }
+        .btn-danger { color:#f87171; border-color:rgba(248,113,113,0.2); }
+        .btn-danger:hover { background:rgba(248,113,113,0.1); border-color:rgba(248,113,113,0.3); }
+        .card { background:var(--bg-card); backdrop-filter:blur(20px); border:1px solid var(--border-glass); border-radius:var(--radius); padding:24px 28px 30px; box-shadow:var(--shadow-card); transition:var(--transition); margin-bottom:28px; }
+        .card:hover { background:var(--bg-card-hover); border-color:rgba(255,255,255,0.12); }
+        .card-header { display:flex; align-items:center; gap:12px; margin-bottom:20px; }
+        .card-header i { font-size:22px; color:var(--gold); width:28px; text-align:center; }
+        .card-header h2 { font-size:18px; font-weight:600; }
+        .card-header .badge { margin-left:auto; background:var(--gold-glow); color:var(--gold-light); font-size:11px; font-weight:600; padding:4px 14px; border-radius:40px; border:1px solid rgba(228,168,83,0.2); }
+        .table-wrap { overflow-x:auto; border-radius:var(--radius-sm); border:1px solid var(--border-glass); }
+        table { width:100%; border-collapse:collapse; font-size:14px; min-width:600px; }
+        table th { text-align:left; padding:12px 16px; font-weight:600; color:var(--text-secondary); background:rgba(255,255,255,0.03); border-bottom:1px solid var(--border-glass); font-size:12px; text-transform:uppercase; letter-spacing:0.5px; position:sticky; top:0; background:var(--bg-primary); z-index:2; }
+        table td { padding:10px 16px; border-bottom:1px solid rgba(255,255,255,0.04); color:var(--text-secondary); vertical-align:middle; }
+        table tr:last-child td { border-bottom:none; }
+        table tr:hover td { background:rgba(255,255,255,0.02); }
+        table td select { background:rgba(255,255,255,0.06); border:1px solid var(--border-glass); border-radius:6px; color:var(--text-primary); padding:4px 8px; font-family:inherit; font-size:13px; cursor:pointer; outline:none; transition:var(--transition); width:100%; min-width:80px; }
+        table td select:focus { border-color:var(--gold); box-shadow:0 0 0 3px var(--gold-glow); }
+        table td select:disabled { opacity:0.5; cursor:not-allowed; }
+        table td select option { background:var(--bg-secondary); color:var(--text-primary); }
+        .status-badge { display:inline-block; padding:2px 12px; border-radius:40px; font-size:12px; font-weight:600; }
+        .status-hadir { background:rgba(74,222,128,0.15); color:#4ade80; }
+        .status-absen { background:rgba(248,113,113,0.15); color:#f87171; }
+        .status-libur { background:rgba(250,204,21,0.15); color:#facc15; }
+        .status-kosong { background:rgba(255,255,255,0.04); color:var(--text-muted); }
+        .rekap-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); gap:16px; margin-top:20px; }
+        .rekap-item { background:rgba(255,255,255,0.03); border-radius:var(--radius-sm); padding:14px 18px; border:1px solid var(--border-glass); text-align:center; }
+        .rekap-item .name { font-weight:600; color:var(--text-primary); }
+        .rekap-item .hadir { font-size:20px; font-weight:700; color:#4ade80; }
+        .rekap-item .gaji { font-size:16px; color:var(--gold); font-weight:600; }
+        .rekap-item .detail { font-size:13px; color:var(--text-muted); margin-top:4px; }
+        .text-muted { color:var(--text-muted); }
+        .text-center { text-align:center; }
+        .mt-2 { margin-top:12px; }
+        .flex { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+        .gap-1 { gap:8px; }
+        .toast-container { position:fixed; bottom:30px; right:30px; z-index:9999; display:flex; flex-direction:column; gap:10px; max-width:360px; width:100%; }
+        .toast { padding:14px 20px; border-radius:var(--radius-sm); background:var(--bg-secondary); border:1px solid var(--border-glass); backdrop-filter:blur(20px); color:var(--text-primary); font-size:14px; font-weight:500; box-shadow:0 12px 40px rgba(0,0,0,0.6); animation:slideUp 0.4s ease forwards; display:flex; align-items:center; gap:12px; }
+        .toast i { font-size:18px; color:var(--gold); }
+        .toast.success i { color:#4ade80; }
+        .toast.error i { color:#f87171; }
+        .toast.hide { animation:slideDown 0.3s ease forwards; }
+        @keyframes slideUp { from { opacity:0; transform:translateY(30px) scale(0.96); } to { opacity:1; transform:translateY(0) scale(1); } }
+        @keyframes slideDown { from { opacity:1; transform:translateY(0) scale(1); } to { opacity:0; transform:translateY(30px) scale(0.96); } }
+        .logo-svg svg { display:block; width:100%; height:100%; }
+        ::-webkit-scrollbar { width:6px; height:6px; }
+        ::-webkit-scrollbar-track { background:var(--bg-primary); }
+        ::-webkit-scrollbar-thumb { background:var(--gold); border-radius:10px; }
+        .btn-reset { color:var(--text-muted); border-color:rgba(255,255,255,0.06); }
+        .btn-reset:hover { color:#f87171; border-color:rgba(248,113,113,0.2); background:rgba(248,113,113,0.05); }
+        @media (max-width:768px) { .app-header { flex-direction:column; align-items:stretch; } .brand h1 { font-size:20px; } .card { padding:16px; } table td select { min-width:60px; font-size:12px; } .rekap-grid { grid-template-columns:1fr 1fr; } }
+        @media (max-width:480px) { .rekap-grid { grid-template-columns:1fr; } }
+        .db-status { font-size:12px; color:var(--text-muted); background:rgba(255,255,255,0.04); padding:4px 12px; border-radius:40px; border:1px solid var(--border-glass); }
+        .role-selector { display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.04); padding:4px 12px 4px 16px; border-radius:40px; border:1px solid var(--border-glass); }
+        .role-selector label { font-size:13px; color:var(--text-secondary); }
+        .role-selector select { background:transparent; border:none; color:var(--text-primary); font-weight:600; font-size:14px; padding:6px 4px; outline:none; cursor:pointer; font-family:inherit; }
+        .role-selector select option { background:var(--bg-secondary); color:var(--text-primary); }
+        .role-badge { font-size:11px; font-weight:600; padding:2px 12px; border-radius:40px; text-transform:uppercase; }
+        .role-admin { background:rgba(228,168,83,0.2); color:var(--gold); border:1px solid rgba(228,168,83,0.2); }
+        .role-karyawan { background:rgba(74,222,128,0.15); color:#4ade80; border:1px solid rgba(74,222,128,0.15); }
+        .btn-logout { color:var(--text-muted); border-color:rgba(255,255,255,0.06); }
+        .btn-logout:hover { color:#f87171; border-color:rgba(248,113,113,0.2); background:rgba(248,113,113,0.05); }
+    </style>
+</head>
+<body>
+
+    <!-- ===== LOGIN PAGE ===== -->
+    <div id="loginPage">
+        <div class="login-card">
+            <div class="logo">
+                <svg viewBox="0 0 100 100" fill="none" width="72" height="72">
+                    <circle cx="50" cy="50" r="46" stroke="url(#goldGrad)" stroke-width="3" fill="rgba(228,168,83,0.06)"/>
+                    <text x="50" y="62" font-family="Inter, sans-serif" font-size="40" font-weight="700" fill="url(#goldGrad)" text-anchor="middle" letter-spacing="2">EVO</text>
+                    <defs><linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#e4a853"/><stop offset="100%" stop-color="#f5d08a"/></linearGradient></defs>
+                </svg>
+            </div>
+            <h1>Selamat Datang</h1>
+            <p>Silakan login untuk mengakses absen harian</p>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label><i class="fas fa-user"></i> Username</label>
+                    <input type="text" id="loginUsername" placeholder="admin atau karyawan" required />
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-lock"></i> Password</label>
+                    <input type="password" id="loginPassword" placeholder="••••••••" required />
+                </div>
+                <button type="submit" class="btn-login"><i class="fas fa-sign-in-alt"></i> Masuk</button>
+                <div class="login-error" id="loginError"></div>
+            </form>
+            <div class="login-footer">
+                Demo: <span>admin</span> / <span>admin123</span> &bull; <span>karyawan</span> / <span>karyawan123</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== APP WRAPPER ===== -->
+    <div id="app">
+        <!-- HEADER -->
+        <header class="app-header">
+            <div class="brand">
+                <div class="logo-svg">
+                    <svg viewBox="0 0 100 100" fill="none">
+                        <circle cx="50" cy="50" r="46" stroke="url(#goldGrad)" stroke-width="3" fill="rgba(228,168,83,0.06)"/>
+                        <text x="50" y="62" font-family="Inter, sans-serif" font-size="40" font-weight="700" fill="url(#goldGrad)" text-anchor="middle" letter-spacing="2">EVO</text>
+                        <defs><linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#e4a853"/><stop offset="100%" stop-color="#f5d08a"/></linearGradient></defs>
+                    </svg>
+                </div>
+                <h1>EVO <span>· Absen Karyawan</span></h1>
+            </div>
+            <div class="header-actions">
+                <span class="role-badge role-admin" id="headerRoleBadge">Admin</span>
+                <span class="db-status" id="dbStatus"><i class="fas fa-database"></i> IndexedDB</span>
+                <button class="btn btn-gold btn-sm" id="addEmployeeBtn"><i class="fas fa-user-plus"></i> Tambah Karyawan</button>
+                <button class="btn btn-danger btn-sm" id="deleteEmployeeBtn"><i class="fas fa-user-minus"></i> Hapus Karyawan</button>
+                <div class="upload-btn-wrapper" id="uploadWrapper">
+                    <button class="btn btn-gold btn-sm" id="uploadBtn"><i class="fas fa-upload"></i> Upload Excel</button>
+                    <input type="file" id="fileInput" accept=".xlsx,.xls" />
+                </div>
+                <button class="btn btn-gold btn-sm" id="exportBtn"><i class="fas fa-file-excel"></i> Export Excel</button>
+                <button class="btn btn-outline btn-sm" id="resetDataBtn"><i class="fas fa-undo-alt"></i> Reset</button>
+                <button class="btn btn-outline btn-sm btn-logout" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                <span class="text-muted" style="font-size:13px;" id="lastUpdate"></span>
+            </div>
+        </header>
+
+        <!-- CARD TABEL ABSEN -->
+        <section class="card">
+            <div class="card-header">
+                <i class="fas fa-table"></i>
+                <h2>Daftar Absen Harian</h2>
+                <span class="badge" id="rowCount">0</span>
+            </div>
+            <div class="table-wrap" id="tableWrap">
+                <table>
+                    <thead id="tableHead"><tr><th>Tanggal</th></tr></thead>
+                    <tbody id="tableBody"><tr><td class="text-center text-muted" style="padding:30px;">Memuat data...</td></tr></tbody>
+                </table>
+            </div>
+            <div class="flex mt-2">
+                <button class="btn btn-gold btn-sm" id="addRowBtn"><i class="fas fa-plus"></i> Tambah Tanggal</button>
+                <span class="text-muted" style="font-size:13px;">Klik dropdown untuk mengubah status</span>
+            </div>
+        </section>
+
+        <!-- REKAP & GAJI -->
+        <section class="card">
+            <div class="card-header">
+                <i class="fas fa-chart-simple"></i>
+                <h2>Rekap Hadir &amp; Gaji</h2>
+                <span class="badge" id="rekapCount">0</span>
+            </div>
+            <div id="rekapContainer">
+                <div class="rekap-grid" id="rekapGrid"><div class="text-muted" style="padding:20px;text-align:center;">Memuat...</div></div>
+                <div style="margin-top:16px; font-size:14px; color:var(--text-muted);">
+                    <i class="fas fa-info-circle"></i> Gaji per hari: <strong id="salaryDisplay" style="color:var(--gold);">Rp50.000</strong>
+                    <button class="btn btn-outline btn-sm" id="editSalaryBtn" style="margin-left:12px;"><i class="fas fa-pen"></i> Ubah</button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- TOAST -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- ============================================================ -->
+    <!-- ===== JAVASCRIPT ===== -->
+    <script>
+        (function() {
+            'use strict';
+
+            // =============================================================
+            // 1. AUTHENTICATION
+            // =============================================================
+            const CREDENTIALS = {
+                admin: { password: 'admin123', role: 'admin' },
+                karyawan: { password: 'karyawan123', role: 'karyawan' }
+            };
+
+            const loginPage = document.getElementById('loginPage');
+            const app = document.getElementById('app');
+            const loginForm = document.getElementById('loginForm');
+            const loginUsername = document.getElementById('loginUsername');
+            const loginPassword = document.getElementById('loginPassword');
+            const loginError = document.getElementById('loginError');
+            const logoutBtn = document.getElementById('logoutBtn');
+            const headerRoleBadge = document.getElementById('headerRoleBadge');
+
+            function checkAuth() {
+                const loggedIn = localStorage.getItem('evo_logged_in') === 'true';
+                const role = localStorage.getItem('evo_role') || 'karyawan';
+                if (loggedIn) {
+                    loginPage.style.display = 'none';
+                    app.classList.add('active');
+                    headerRoleBadge.textContent = role === 'admin' ? 'Admin' : 'Karyawan';
+                    headerRoleBadge.className = 'role-badge ' + (role === 'admin' ? 'role-admin' : 'role-karyawan');
+                    window.currentRole = role;
+                    if (typeof initApp === 'function') {
+                        initApp();
+                    }
+                } else {
+                    loginPage.style.display = 'flex';
+                    app.classList.remove('active');
+                }
+            }
+
+            function doLogin(username, password) {
+                const user = CREDENTIALS[username.toLowerCase()];
+                if (user && user.password === password) {
+                    localStorage.setItem('evo_logged_in', 'true');
+                    localStorage.setItem('evo_role', user.role);
+                    loginError.textContent = '';
+                    checkAuth();
+                    showToast('✅ Login berhasil sebagai ' + (user.role === 'admin' ? 'Admin' : 'Karyawan'), 'success');
+                    return true;
+                } else {
+                    loginError.textContent = 'Username atau password salah.';
+                    return false;
+                }
+            }
+
+            function doLogout() {
+                localStorage.removeItem('evo_logged_in');
+                localStorage.removeItem('evo_role');
+                checkAuth();
+                showToast('👋 Anda telah logout.', 'info');
+            }
+
+            loginForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const username = loginUsername.value.trim();
+                const password = loginPassword.value.trim();
+                if (!username || !password) {
+                    loginError.textContent = 'Harap isi username dan password.';
+                    return;
+                }
+                doLogin(username, password);
+            });
+
+            logoutBtn.addEventListener('click', doLogout);
+
+            // =============================================================
+            // 2. DATABASE MANAGER (IndexedDB)
+            // =============================================================
+            class Database {
+                constructor() {
+                    this.dbName = 'EVOAttendanceDB';
+                    this.dbVersion = 1;
+                    this.db = null;
+                    this.ready = false;
+                }
+                open() {
+                    return new Promise((resolve, reject) => {
+                        const request = indexedDB.open(this.dbName, this.dbVersion);
+                        request.onupgradeneeded = (e) => {
+                            const db = e.target.result;
+                            if (!db.objectStoreNames.contains('settings')) {
+                                db.createObjectStore('settings', { keyPath: 'id' });
+                            }
+                            if (!db.objectStoreNames.contains('employees')) {
+                                db.createObjectStore('employees', { keyPath: 'name' });
+                            }
+                            if (!db.objectStoreNames.contains('attendance')) {
+                                const store = db.createObjectStore('attendance', { keyPath: 'id' });
+                                store.createIndex('date', 'date', { unique: false });
+                            }
+                        };
+                        request.onsuccess = (e) => {
+                            this.db = e.target.result;
+                            this.ready = true;
+                            resolve(this.db);
+                        };
+                        request.onerror = (e) => reject(e.target.error);
+                    });
+                }
+                async getSettings() {
+                    const tx = this.db.transaction('settings', 'readonly');
+                    const store = tx.objectStore('settings');
+                    return new Promise((resolve) => {
+                        const req = store.get('main');
+                        req.onsuccess = () => resolve(req.result || null);
+                        req.onerror = () => resolve(null);
+                    });
+                }
+                async saveSettings(settings) {
+                    const tx = this.db.transaction('settings', 'readwrite');
+                    const store = tx.objectStore('settings');
+                    store.put({ id: 'main', ...settings });
+                    return new Promise((resolve) => { tx.oncomplete = () => resolve(); tx.onerror = () => resolve(); });
+                }
+                async getEmployees() {
+                    const tx = this.db.transaction('employees', 'readonly');
+                    const store = tx.objectStore('employees');
+                    return new Promise((resolve) => {
+                        const req = store.getAll();
+                        req.onsuccess = () => resolve(req.result.map(r => r.name));
+                        req.onerror = () => resolve([]);
+                    });
+                }
+                async saveEmployees(empNames) {
+                    const tx = this.db.transaction('employees', 'readwrite');
+                    const store = tx.objectStore('employees');
+                    store.clear();
+                    empNames.forEach(name => store.put({ name }));
+                    return new Promise((resolve) => { tx.oncomplete = () => resolve(); tx.onerror = () => resolve(); });
+                }
+                async getAttendance() {
+                    const tx = this.db.transaction('attendance', 'readonly');
+                    const store = tx.objectStore('attendance');
+                    return new Promise((resolve) => {
+                        const req = store.getAll();
+                        req.onsuccess = () => {
+                            const all = req.result || [];
+                            const map = {};
+                            all.forEach(item => { map[item.date] = item.records || {}; });
+                            resolve(map);
+                        };
+                        req.onerror = () => resolve({});
+                    });
+                }
+                async saveAttendanceRecord(date, records) {
+                    const tx = this.db.transaction('attendance', 'readwrite');
+                    const store = tx.objectStore('attendance');
+                    store.put({ id: date, date: date, records: records });
+                    return new Promise((resolve) => { tx.oncomplete = () => resolve(); tx.onerror = () => resolve(); });
+                }
+                async deleteAttendanceRecord(date) {
+                    const tx = this.db.transaction('attendance', 'readwrite');
+                    const store = tx.objectStore('attendance');
+                    store.delete(date);
+                    return new Promise((resolve) => { tx.oncomplete = () => resolve(); tx.onerror = () => resolve(); });
+                }
+                async importAttendance(attMap) {
+                    const tx = this.db.transaction('attendance', 'readwrite');
+                    const store = tx.objectStore('attendance');
+                    store.clear();
+                    for (const [date, records] of Object.entries(attMap)) {
+                        store.put({ id: date, date: date, records: records });
+                    }
+                    return new Promise((resolve) => { tx.oncomplete = () => resolve(); tx.onerror = () => resolve(); });
+                }
+                async updateAllAttendanceWithNewEmployee(newEmp) {
+                    const tx = this.db.transaction('attendance', 'readwrite');
+                    const store = tx.objectStore('attendance');
+                    return new Promise((resolve, reject) => {
+                        const req = store.openCursor();
+                        req.onsuccess = (e) => {
+                            const cursor = e.target.result;
+                            if (cursor) {
+                                const record = cursor.value;
+                                if (record.records && typeof record.records === 'object') {
+                                    record.records[newEmp] = '';
+                                    cursor.update(record);
+                                }
+                                cursor.continue();
+                            } else {
+                                resolve();
+                            }
+                        };
+                        req.onerror = () => reject(req.error);
+                    });
+                }
+                async deleteEmployeeFromAllAttendance(empName) {
+                    const tx = this.db.transaction('attendance', 'readwrite');
+                    const store = tx.objectStore('attendance');
+                    return new Promise((resolve, reject) => {
+                        const req = store.openCursor();
+                        req.onsuccess = (e) => {
+                            const cursor = e.target.result;
+                            if (cursor) {
+                                const record = cursor.value;
+                                if (record.records && typeof record.records === 'object') {
+                                    delete record.records[empName];
+                                    cursor.update(record);
+                                }
+                                cursor.continue();
+                            } else {
+                                resolve();
+                            }
+                        };
+                        req.onerror = () => reject(req.error);
+                    });
+                }
+            }
+
+            // =============================================================
+            // 3. APP STATE
+            // =============================================================
+            const db = new Database();
+            let employees = [];
+            let attendance = {};
+            let salaryPerDay = 50000;
+            let currentRole = localStorage.getItem('evo_role') || 'karyawan';
+
+            // DOM refs
+            const $ = (s) => document.querySelector(s);
+            const $$ = (s) => document.querySelectorAll(s);
+            const tableHead = $('#tableHead');
+            const tableBody = $('#tableBody');
+            const rowCount = $('#rowCount');
+            const rekapGrid = $('#rekapGrid');
+            const rekapCount = $('#rekapCount');
+            const salaryDisplay = $('#salaryDisplay');
+            const fileInput = $('#fileInput');
+            const resetDataBtn = $('#resetDataBtn');
+            const addRowBtn = $('#addRowBtn');
+            const editSalaryBtn = $('#editSalaryBtn');
+            const exportBtn = $('#exportBtn');
+            const addEmployeeBtn = $('#addEmployeeBtn');
+            const deleteEmployeeBtn = $('#deleteEmployeeBtn');
+            const lastUpdate = $('#lastUpdate');
+            const toastContainer = $('#toastContainer');
+            const dbStatus = $('#dbStatus');
+            const uploadBtn = $('#uploadBtn');
+            const uploadWrapper = $('#uploadWrapper');
+
+            // Default data
+            const DEFAULT_EMPLOYEES = ['IPUL', 'TOMI', 'ADIT', 'YUGO'];
+            const DEFAULT_ATTENDANCE = {
+                '2026-07-08': { IPUL: 'HADIR', TOMI: 'HADIR', ADIT: 'HADIR', YUGO: 'ABSEN' },
+                '2026-07-09': { IPUL: 'HADIR', TOMI: 'HADIR', ADIT: 'HADIR', YUGO: 'HADIR' },
+                '2026-07-10': { IPUL: 'HADIR', TOMI: 'HADIR', ADIT: 'HADIR', YUGO: 'HADIR' },
+                '2026-07-11': { IPUL: 'LIBUR', TOMI: 'LIBUR', ADIT: 'LIBUR', YUGO: 'LIBUR' },
+                '2026-07-12': { IPUL: 'LIBUR', TOMI: 'LIBUR', ADIT: 'LIBUR', YUGO: 'LIBUR' },
+                '2026-07-13': { IPUL: 'HADIR', TOMI: 'HADIR', ADIT: 'ABSEN', YUGO: 'HADIR' },
+                '2026-07-14': { IPUL: 'ABSEN', TOMI: 'HADIR', ADIT: 'HADIR', YUGO: 'HADIR' }
+            };
+            const DEFAULT_SALARY = 50000;
+
+            // =============================================================
+            // 4. FUNGSI DATABASE
+            // =============================================================
+            async function loadAllData() {
+                try {
+                    await db.open();
+                    dbStatus.innerHTML = '<i class="fas fa-database"></i> IndexedDB <span style="color:#4ade80;">●</span>';
+                    const settings = await db.getSettings();
+                    if (settings) salaryPerDay = settings.salaryPerDay || DEFAULT_SALARY;
+                    else { salaryPerDay = DEFAULT_SALARY; await db.saveSettings({ salaryPerDay }); }
+
+                    const empList = await db.getEmployees();
+                    if (empList && empList.length > 0) employees = empList;
+                    else { employees = DEFAULT_EMPLOYEES; await db.saveEmployees(employees); }
+
+                    const attMap = await db.getAttendance();
+                    if (Object.keys(attMap).length > 0) attendance = attMap;
+                    else { attendance = JSON.parse(JSON.stringify(DEFAULT_ATTENDANCE)); await db.importAttendance(
+                        attendance); }
+
+                    renderAll();
+                    showToast('✅ Data dimuat dari IndexedDB', 'success');
+                } catch (err) {
+                    console.error(err);
+                    showToast('Gagal membuka database: ' + err.message, 'error');
+                }
+            }
+
+            // =============================================================
+            // 5. RENDER
+            // =============================================================
+            function renderAll() {
+                renderTable();
+                renderRekap();
+                rowCount.textContent = Object.keys(attendance).length;
+                salaryDisplay.textContent = 'Rp' + salaryPerDay.toLocaleString();
+                lastUpdate.textContent = 'Data tersimpan di IndexedDB';
+                updateUIByRole();
+            }
+
+            function renderTable() {
+                const dates = Object.keys(attendance).sort();
+                let theadHTML = `<tr><th>Tanggal</th>`;
+                employees.forEach(emp => { theadHTML += `<th>${emp}</th>`; });
+                theadHTML += `<th style="width:60px;"></th></tr>`;
+                tableHead.innerHTML = theadHTML;
+
+                if (dates.length === 0) {
+                    tableBody.innerHTML =
+                        `<tr><td colspan="${employees.length+2}" class="text-center text-muted" style="padding:30px;">Belum ada data. Upload Excel atau tambah tanggal.</td></tr>`;
+                    return;
+                }
+
+                let tbodyHTML = '';
+                const isAdmin = (currentRole === 'admin');
+                dates.forEach(date => {
+                    const row = attendance[date] || {};
+                    tbodyHTML += `<tr data-date="${date}">`;
+                    tbodyHTML += `<td><strong>${formatDate(date)}</strong></td>`;
+                    employees.forEach(emp => {
+                        const val = row[emp] || '';
+                        const statusClass = getStatusClass(val);
+                        tbodyHTML += `<td>
+                                <select data-date="${date}" data-employee="${emp}" class="status-select" ${!isAdmin ? 'disabled' : ''}>
+                                    <option value="" ${val===''?'selected':''}>—</option>
+                                    <option value="HADIR" ${val==='HADIR'?'selected':''}>HADIR</option>
+                                    <option value="ABSEN" ${val==='ABSEN'?'selected':''}>ABSEN</option>
+                                    <option value="LIBUR" ${val==='LIBUR'?'selected':''}>LIBUR</option>
+                                </select>
+                                <span class="status-badge ${statusClass}">${val || '—'}</span>
+                            </td>`;
+                    });
+                    tbodyHTML += `<td>
+                            <button class="btn btn-outline btn-sm delete-row" data-date="${date}" style="color:var(--text-muted); ${!isAdmin ? 'display:none;' : ''}">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>`;
+                    tbodyHTML += `</tr>`;
+                });
+                tableBody.innerHTML = tbodyHTML;
+
+                if (isAdmin) {
+                    tableBody.querySelectorAll('.status-select').forEach(sel => {
+                        sel.addEventListener('change', async function(e) {
+                            const date = this.dataset.date;
+                            const emp = this.dataset.employee;
+                            const val = this.value;
+                            if (!attendance[date]) attendance[date] = {};
+                            attendance[date][emp] = val;
+                            await db.saveAttendanceRecord(date, attendance[date]);
+                            const badge = this.parentElement.querySelector('.status-badge');
+                            if (badge) {
+                                badge.textContent = val || '—';
+                                badge.className = 'status-badge ' + getStatusClass(val);
+                            }
+                            renderRekap();
+                            showToast(`✅ ${date} ${emp} -> ${val || 'kosong'}`, 'success');
+                        });
+                    });
+
+                    tableBody.querySelectorAll('.delete-row').forEach(btn => {
+                        btn.addEventListener('click', async function() {
+                            const date = this.dataset.date;
+                            if (confirm(`Hapus data tanggal ${formatDate(date)}?`)) {
+                                await db.deleteAttendanceRecord(date);
+                                delete attendance[date];
+                                renderAll();
+                                showToast('🗑️ Tanggal dihapus.', 'info');
+                            }
+                        });
+                    });
+                }
+            }
+
+            function renderRekap() {
+                const dates = Object.keys(attendance);
+                if (employees.length === 0 || dates.length === 0) {
+                    rekapGrid.innerHTML =
+                        `<div class="text-muted" style="padding:20px;text-align:center;">Belum ada data karyawan atau absen.</div>`;
+                    rekapCount.textContent = '0';
+                    return;
+                }
+                let html = '';
+                employees.forEach(emp => {
+                    let totalHadir = 0;
+                    dates.forEach(date => {
+                        const row = attendance[date] || {};
+                        if (row[emp] === 'HADIR') totalHadir++;
+                    });
+                    const gaji = totalHadir * salaryPerDay;
+                    html += `
+                        <div class="rekap-item">
+                            <div class="name">${emp}</div>
+                            <div class="hadir">${totalHadir}</div>
+                            <div class="gaji">Rp ${gaji.toLocaleString()}</div>
+                            <div class="detail">Hadir dari ${dates.length} hari</div>
+                        </div>
+                    `;
+                });
+                rekapGrid.innerHTML = html;
+                rekapCount.textContent = employees.length;
+            }
+
+            function updateUIByRole() {
+                const isAdmin = (currentRole === 'admin');
+                const editableElements = [
+                    { el: fileInput, disable: !isAdmin },
+                    { el: uploadBtn, disable: !isAdmin },
+                    { el: resetDataBtn, disable: !isAdmin },
+                    { el: addRowBtn, disable: !isAdmin },
+                    { el: editSalaryBtn, disable: !isAdmin },
+                    { el: addEmployeeBtn, disable: !isAdmin },
+                    { el: deleteEmployeeBtn, disable: !isAdmin },
+                ];
+                editableElements.forEach(({ el, disable }) => {
+                    if (el) el.disabled = disable;
+                });
+
+                document.querySelectorAll('.status-select').forEach(sel => {
+                    sel.disabled = !isAdmin;
+                });
+
+                document.querySelectorAll('.delete-row').forEach(btn => {
+                    btn.style.display = isAdmin ? 'inline-flex' : 'none';
+                });
+
+                const fileInputWrapper = uploadWrapper.querySelector('input[type=file]');
+                if (fileInputWrapper) {
+                    fileInputWrapper.style.display = isAdmin ? 'block' : 'none';
+                }
+                if (!isAdmin) {
+                    uploadBtn.innerHTML = '<i class="fas fa-eye"></i> Hanya Lihat';
+                    uploadBtn.style.opacity = '0.6';
+                } else {
+                    uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Upload Excel';
+                    uploadBtn.style.opacity = '1';
+                }
+            }
+
+            // =============================================================
+            // 6. HELPERS
+            // =============================================================
+            function formatDate(dateStr) {
+                if (!dateStr) return '';
+                const parts = dateStr.split('-');
+                if (parts.length !== 3) return dateStr;
+                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
+                return `${parseInt(parts[2])} ${months[parseInt(parts[1])-1]} ${parts[0]}`;
+            }
+
+            function getStatusClass(val) {
+                if (val === 'HADIR') return 'status-hadir';
+                if (val === 'ABSEN') return 'status-absen';
+                if (val === 'LIBUR') return 'status-libur';
+                return 'status-kosong';
+            }
+
+            // =============================================================
+            // 7. FUNGSI TAMBAH KARYAWAN
+            // =============================================================
+            async function addEmployee() {
+                if (currentRole !== 'admin') { showToast('Hanya admin yang bisa menambah karyawan.', 'error'); return; }
+                const name = prompt('Masukkan nama karyawan baru:');
+                if (!name) return;
+                const trimmed = name.trim().toUpperCase();
+                if (!trimmed) { showToast('Nama tidak boleh kosong.', 'error'); return; }
+                if (employees.includes(trimmed)) {
+                    showToast(`Karyawan ${trimmed} sudah ada.`, 'error');
+                    return;
+                }
+                employees.push(trimmed);
+                await db.saveEmployees(employees);
+
+                const dates = Object.keys(attendance);
+                for (const date of dates) {
+                    attendance[date][trimmed] = '';
+                    await db.saveAttendanceRecord(date, attendance[date]);
+                }
+
+                renderAll();
+                showToast(`✅ Karyawan ${trimmed} berhasil ditambahkan.`, 'success');
+            }
+
+            // =============================================================
+            // 8. FUNGSI HAPUS KARYAWAN
+            // =============================================================
+            async function deleteEmployee() {
+                if (currentRole !== 'admin') { showToast('Hanya admin yang bisa menghapus karyawan.', 'error'); return; }
+                if (employees.length === 0) {
+                    showToast('Tidak ada karyawan untuk dihapus.', 'error');
+                    return;
+                }
+                const name = prompt('Masukkan nama karyawan yang akan dihapus:\n' + employees.join(', '));
+                if (!name) return;
+                const trimmed = name.trim().toUpperCase();
+                if (!trimmed) { showToast('Nama tidak boleh kosong.', 'error'); return; }
+                if (!employees.includes(trimmed)) {
+                    showToast(`Karyawan ${trimmed} tidak ditemukan.`, 'error');
+                    return;
+                }
+                if (!confirm(`Yakin ingin menghapus karyawan ${trimmed} dan semua data absennya?`)) return;
+
+                // Hapus dari employees
+                employees = employees.filter(e => e !== trimmed);
+                await db.saveEmployees(employees);
+
+                // Hapus dari semua attendance record
+                for (const date of Object.keys(attendance)) {
+                    delete attendance[date][trimmed];
+                    await db.saveAttendanceRecord(date, attendance[date]);
+                }
+
+                renderAll();
+                showToast(`🗑️ Karyawan ${trimmed} berhasil dihapus.`, 'success');
+            }
+
+            // =============================================================
+            // 9. FUNGSI TAMBAH TANGGAL (HARI BERIKUTNYA)
+            // =============================================================
+            async function addDateRow() {
+                if (currentRole !== 'admin') { showToast('Hanya admin yang bisa menambah tanggal.', 'error'); return; }
+                const dates = Object.keys(attendance).sort();
+                let newDateStr;
+                if (dates.length === 0) {
+                    newDateStr = new Date().toISOString().slice(0, 10);
+                } else {
+                    const lastDate = dates[dates.length - 1];
+                    const d = new Date(lastDate);
+                    d.setDate(d.getDate() + 1);
+                    newDateStr = d.toISOString().slice(0, 10);
+                }
+                if (attendance[newDateStr]) {
+                    showToast(`Tanggal ${formatDate(newDateStr)} sudah ada.`, 'error');
+                    return;
+                }
+                const record = {};
+                employees.forEach(emp => { record[emp] = ''; });
+                attendance[newDateStr] = record;
+                await db.saveAttendanceRecord(newDateStr, record);
+                renderAll();
+                showToast(`📅 Tanggal ${formatDate(newDateStr)} ditambahkan.`, 'success');
+            }
+
+            async function editSalary() {
+                if (currentRole !== 'admin') { showToast('Hanya admin yang bisa mengubah gaji.', 'error'); return; }
+                const input = prompt('Masukkan gaji per hari (Rupiah):', salaryPerDay);
+                if (input === null) return;
+                const val = parseFloat(input);
+                if (isNaN(val) || val < 0) { showToast('Masukkan angka valid.', 'error'); return; }
+                salaryPerDay = val;
+                await db.saveSettings({ salaryPerDay });
+                renderAll();
+                showToast('💰 Gaji per hari diperbarui.', 'success');
+            }
+
+            async function resetToDefault() {
+                if (currentRole !== 'admin') { showToast('Hanya admin yang bisa reset data.', 'error'); return; }
+                if (!confirm('Reset semua data ke contoh awal?')) return;
+                employees = DEFAULT_EMPLOYEES;
+                attendance = JSON.parse(JSON.stringify(DEFAULT_ATTENDANCE));
+                salaryPerDay = DEFAULT_SALARY;
+                await db.saveEmployees(employees);
+                await db.importAttendance(attendance);
+                await db.saveSettings({ salaryPerDay });
+                renderAll();
+                showToast('🔄 Data direset ke contoh.', 'info');
+            }
+
+            async function importExcelData(file) {
+                if (currentRole !== 'admin') { showToast('Hanya admin yang bisa import Excel.', 'error'); return; }
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    try {
+                        const workbook = XLSX.read(e.target.result, { type: 'array' });
+                        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const json = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+                        if (json.length < 2) { showToast('File kosong.', 'error'); return; }
+
+                        const header = json[0];
+                        let dateColIdx = -1;
+                        let empCols = [];
+                        let empNames = [];
+                        for (let i = 0; i < header.length; i++) {
+                            const col = String(header[i]).toUpperCase().trim();
+                            if (col === 'TANGGAL') dateColIdx = i;
+                            else if (col === 'IPUL' || col === 'TOMI' || col === 'ADIT' || col === 'YUGO') {
+                                empCols.push(i);
+                                empNames.push(col);
+                            }
+                        }
+                        if (dateColIdx === -1 || empCols.length === 0) {
+                            showToast('Format Excel tidak cocok.', 'error');
+                            return;
+                        }
+
+                        let newAtt = {};
+                        let newSalary = 50000;
+                        for (let r = 1; r < json.length; r++) {
+                            const row = json[r];
+                            if (!row || row.length === 0) continue;
+                            const firstCell = String(row[0] || '').toUpperCase().trim();
+                            if (firstCell === 'GAJI PER HARI') {
+                                for (let c = 1; c < row.length; c++) {
+                                    const v = parseFloat(row[c]);
+                                    if (!isNaN(v) && v > 0) { newSalary = v; break; }
+                                }
+                                continue;
+                            }
+                            const dateVal = row[dateColIdx];
+                            if (!dateVal) continue;
+                            let dateStr = '';
+                            if (typeof dateVal === 'number') {
+                                const d = new Date((dateVal - 25569) * 86400 * 1000);
+                                dateStr = d.toISOString().slice(0, 10);
+                            } else if (typeof dateVal === 'string') {
+                                const d = new Date(dateVal);
+                                if (!isNaN(d)) dateStr = d.toISOString().slice(0, 10);
+                                else dateStr = dateVal.slice(0, 10);
+                            }
+                            if (!dateStr) continue;
+                            const record = {};
+                            empCols.forEach((idx, i) => {
+                                const val = String(row[idx] || '').toUpperCase().trim();
+                                if (['HADIR', 'ABSEN', 'LIBUR'].includes(val)) {
+                                    record[empNames[i]] = val;
+                                } else {
+                                    record[empNames[i]] = '';
+                                }
+                            });
+                            if (Object.values(record).some(v => v !== '')) {
+                                newAtt[dateStr] = record;
+                            }
+                        }
+
+                        employees = empNames;
+                        salaryPerDay = newSalary;
+                        attendance = newAtt;
+                        await db.saveEmployees(employees);
+                        await db.importAttendance(attendance);
+                        await db.saveSettings({ salaryPerDay });
+                        renderAll();
+                        showToast('✅ Data berhasil diimpor!', 'success');
+                    } catch (err) {
+                        showToast('Gagal baca file: ' + err.message, 'error');
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            }
+
+            // =============================================================
+            // 10. EXPORT EXCEL (PEMBUKUAN)
+            // =============================================================
+            function exportToExcel() {
+                if (Object.keys(attendance).length === 0) {
+                    showToast('Tidak ada data untuk diekspor.', 'error');
+                    return;
+                }
+                const wb = XLSX.utils.book_new();
+
+                const dates = Object.keys(attendance).sort();
+                const rows = [];
+                const header = ['TANGGAL', ...employees];
+                rows.push(header);
+                dates.forEach(date => {
+                    const row = [date];
+                    employees.forEach(emp => {
+                        row.push(attendance[date][emp] || '');
+                    });
+                    rows.push(row);
+                });
+                rows.push([]);
+                const totalRow = ['TOTAL HADIR'];
+                employees.forEach(emp => {
+                    let total = 0;
+                    dates.forEach(date => {
+                        if (attendance[date][emp] === 'HADIR') total++;
+                    });
+                    totalRow.push(total);
+                });
+                rows.push(totalRow);
+                const gajiRow = ['GAJI'];
+                employees.forEach(emp => {
+                    let total = 0;
+                    dates.forEach(date => {
+                        if (attendance[date][emp] === 'HADIR') total++;
+                    });
+                    gajiRow.push(total * salaryPerDay);
+                });
+                rows.push(gajiRow);
+                rows.push(['GAJI PER HARI', salaryPerDay]);
+
+                const ws = XLSX.utils.aoa_to_sheet(rows);
+                XLSX.utils.book_append_sheet(wb, ws, 'Absen');
+
+                const rekapRows = [
+                    ['Nama', 'Total Hadir', 'Gaji']
+                ];
+                employees.forEach(emp => {
+                    let total = 0;
+                    dates.forEach(date => {
+                        if (attendance[date][emp] === 'HADIR') total++;
+                    });
+                    rekapRows.push([emp, total, total * salaryPerDay]);
+                });
+                const wsRekap = XLSX.utils.aoa_to_sheet(rekapRows);
+                XLSX.utils.book_append_sheet(wb, wsRekap, 'Rekap');
+
+                const fileName = `Absen_EVO_${new Date().toISOString().slice(0,10)}.xlsx`;
+                XLSX.writeFile(wb, fileName);
+                showToast('📥 Export Excel berhasil!', 'success');
+            }
+
+            // =============================================================
+            // 11. TOAST
+            // =============================================================
+            function showToast(message, type = 'info') {
+                const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', info: 'fa-info-circle' };
+                const icon = icons[type] || icons.info;
+                const el = document.createElement('div');
+                el.className = `toast ${type}`;
+                el.innerHTML = `<i class="fas ${icon}"></i> ${message}`;
+                toastContainer.appendChild(el);
+                setTimeout(() => {
+                    el.classList.add('hide');
+                    setTimeout(() => el.remove(), 350);
+                }, 3500);
+            }
+            window.showToast = showToast;
+
+            // =============================================================
+            // 12. INIT APP
+            // =============================================================
+            async function initApp() {
+                await loadAllData();
+
+                fileInput.addEventListener('change', function(e) {
+                    if (this.files && this.files.length > 0) {
+                        importExcelData(this.files[0]);
+                        this.value = '';
+                    }
+                });
+                resetDataBtn.addEventListener('click', resetToDefault);
+                addRowBtn.addEventListener('click', addDateRow);
+                editSalaryBtn.addEventListener('click', editSalary);
+                exportBtn.addEventListener('click', exportToExcel);
+                addEmployeeBtn.addEventListener('click', addEmployee);
+                deleteEmployeeBtn.addEventListener('click', deleteEmployee);
+
+                document.addEventListener('keydown', (e) => {
+                    if (e.ctrlKey && e.shiftKey && e.key === 'A') {
+                        e.preventDefault();
+                        addDateRow();
+                    }
+                });
+            }
+
+            // =============================================================
+            // 13. START
+            // =============================================================
+            checkAuth();
+            window.initApp = initApp;
+
+        })();
+    </script>
+
+</body>
+</html>
